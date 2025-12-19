@@ -1,7 +1,6 @@
 # Dapr Agents Hello World
 
-Minimal setup to run a Dura
-bleAgent with Dapr Agent.
+The smallest possible agent that is production-ready too. Built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc).
 
 ## Prerequisites
 - [An OpenAI API key](https://platform.openai.com/api-keys) or another supported LLM
@@ -23,14 +22,24 @@ pip install -r requirements.txt
 
 * Add your OpenAI or other LLM provider key to `resources/ll-provider.yaml`.
 
-## Run the agent
+## Examine the Dapr's DurableAgent
 
-```bash
-dapr run --app-id agent --resources-path ./resources -p 8001 --log-level warn -- python agent_service.py
+This is the entire agent implementation.
+
+```python
+from dapr_agents import DurableAgent
+from dapr_agents.workflow.runners import AgentRunner
+
+runner = AgentRunner()
+agent = DurableAgent(name="Assistant", system_prompt="You are a helpful assistant")
+
+try:
+    runner.serve(agent, host="0.0.0.0", port=8001)
+finally:
+    runner.shutdown(agent)
 ```
 
-## What DurableAgent is doing
-
+Despite its size, Dapr supplies the production-grade capabilities underneath:
 * Exposes the agent on `http://localhost:8001/run`
 * Uses the [Dapr Conversation API](https://docs.dapr.io/developing-applications/building-blocks/conversation/) to talk to an OpenAI model
 * Uses the [Dapr Pub/Sub API](https://docs.dapr.io/developing-applications/building-blocks/pubsub/) to subscribe to Redis on `assistant.topic`
@@ -38,6 +47,13 @@ dapr run --app-id agent --resources-path ./resources -p 8001 --log-level warn --
 * Uses the [Dapr State Store API](https://docs.dapr.io/developing-applications/building-blocks/state-management/) to persist conversation history to Redis
 * Uses the Dapr State Store API to register itself in Redis for discovery by other agents
 * Uses [Dapr observability features](https://docs.dapr.io/operations/observability/tracing/tracing-overview/) to send execution traces to Zipkin at `http://localhost:9411/`
+
+## Run the agent
+
+```bash
+dapr run --app-id agent --resources-path ./resources -p 8001 --log-level warn -- python agent_service.py
+```
+
 
 ## Trigger the agent over HTTP
 
